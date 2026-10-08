@@ -115,9 +115,16 @@ service worker before concluding a change didn't work (§11 has the snippets).
 
 ## Things to know before you touch anything
 
-- **Deployment is a manual web upload, not `git push`.** The local repo and
-  GitHub have unrelated histories; a plain push is rejected. Details in
-  `docs/06-PROJECT-CONTEXT.md` §2. Never `--force` without asking.
+- **Deployment is `git push`.** Changed 8 Oct 2026 — this repo is wired to
+  `git@github.com:siddhaaaaaaaaaaarth/rep-counter.git` over SSH, and GitHub
+  Pages serves `main` at
+  **<https://siddhaaaaaaaaaaarth.github.io/rep-counter/>**. Pushing to `main`
+  deploys. Still bump `CACHE_VERSION` in the same change or installed phones
+  keep the old build.
+  ⚠ `docs/06-PROJECT-CONTEXT.md` §2 still describes the OLD arrangement
+  (manual web upload, unrelated histories, push rejected). That described a
+  **different, now-abandoned repo** — `rep-counter-2`, still live, deliberately
+  left untouched. Ignore §2 for deployment; it is kept as history.
 - **This user consistently prefers less UI.** When in doubt, remove rather than
   add, and never add explanatory text to a screen unasked.
 - **They are not a developer.** Terminal steps need exact, paste-ready commands

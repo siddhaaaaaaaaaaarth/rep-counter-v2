@@ -13,6 +13,71 @@ Format for each entry:
 
 ---
 
+## 2026-10-08 — Put the project under git; new repo and new live site
+
+**No application code changed.** Infrastructure and documentation only.
+
+**What changed**
+
+- `git init` in this folder — it had no repository at all. First commit:
+  **30 files, 9,162 insertions**, the complete state at `repcounter-v9`.
+- New GitHub repo `siddhaaaaaaaaaaarth/rep-counter`, pushed over **SSH**.
+- GitHub Pages enabled from `main` / root. **New live site:
+  <https://siddhaaaaaaaaaaarth.github.io/rep-counter/>**
+- New `.gitignore` — excludes `.DS_Store` (accidentally committed to the old
+  repo), editor scratch, and `.claude/`.
+- Generated an ed25519 SSH key at `~/.ssh/id_ed25519`, registered on the
+  GitHub account. **No passphrase** — protected by the macOS login instead.
+- Git identity set **locally in this repo only**, not machine-wide.
+
+**Why a fresh repo rather than reusing the old one**
+
+The old repo's history is three commits of an older build, and its local copy
+(`~/Documents/Claude code/rep-counter/`) had diverged into uselessness. The
+user's call was a clean break: new repo, new site, **old repo and old live
+site deliberately untouched** as a separate project.
+
+**⚠ Consequence a supervisor must know: the live URL changed.** Browser
+storage is per-origin, so **nothing logged at the old URL is visible at the
+new one**. This was raised before anything was created and the user confirmed
+they had uninstalled the old app and wanted a fresh start — so no migration
+was needed. Had there been data, it would have required deploying v9 to the
+*old* URL first, since the live v2 build has no export feature.
+
+**Deployment is now `git push`.** Previously manual drag-and-drop upload.
+`docs/06-PROJECT-CONTEXT.md` §2 still describes the old arrangement and is now
+wrong for current work — left in place as history, with warnings added in
+`CLAUDE.md` and `07` §8 pointing at the new §8.1.
+
+⚠ **Two things `git push` does NOT do for you:**
+1. Bump `CACHE_VERSION`. Still manual, still required, or installed phones
+   serve the stale build forever.
+2. Update a phone instantly. The service worker is cache-first, so the first
+   launch after a deploy still shows the old build and the second shows the
+   new one. Not a failed deploy.
+
+**Files touched** `.gitignore` (new), `CLAUDE.md`, `docs/07-MAIN-REFERENCE.md`
+(§8 reframed, new §8.1), `CHANGELOG.md`.
+
+**CACHE_VERSION bumped?** No — deliberately. No app file changed; this release
+is the first deployment of the existing `repcounter-v9`.
+
+**How it was verified**
+
+- `ssh -T git@github.com` → authenticated as `siddhaaaaaaaaaaarth`.
+- `git ls-remote --heads origin` → `main` at `1511484`, matching local HEAD.
+- Live site returns **HTTP 200** and `sw.js` serves `repcounter-v9` —
+  confirmed by fetching the deployed file, not by trusting the Pages UI.
+- Feature markers confirmed present in the **deployed** `js/screens.js`:
+  `export-data`, `import-data`, `move-exercise`, `SESSION NOTES`,
+  `CLEAR SETS`, `btn-outline`.
+- **All 16 service-worker shell files fetched individually: every one 200.**
+  A single 404 there would silently break offline mode, since `sw.js` caches
+  files one by one and tolerates failures.
+- `.DS_Store` confirmed absent from the commit (30 files staged, not 31).
+
+---
+
 ## 2026-08-25 — Backup/restore, session notes made readable, exercise reordering
 
 Three features chosen off the improvement list: #2 export/import, #1 session

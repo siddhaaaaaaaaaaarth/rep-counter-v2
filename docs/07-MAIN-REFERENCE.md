@@ -882,10 +882,18 @@ with data left intact.
 
 ## 8. Real project history (from git)
 
-**Important:** the git repository lives in the *sibling* folder
-`~/Documents/Claude code/rep-counter/`. **This folder — `rep-counter 2/` — has no `.git` directory at all.** History below is
-reconstructed from that sibling repo, which held byte-identical app code as of
-19 Aug 2026.
+### ⚠ This section describes the OLD, abandoned repo. Read §8.1 first.
+
+**As of 8 Oct 2026 this folder is its own git repository**, pushed to
+`git@github.com:siddhaaaaaaaaaaarth/rep-counter.git` and deployed by GitHub
+Pages — see **§8.1** below. Everything from here to the end of §8 is the
+history of a *different* repo that is no longer used for anything.
+
+**That old repository lives in the sibling folder
+`~/Documents/Claude code/rep-counter/`** (note: the working folder itself moved
+out of `Documents/` in Oct 2026 and is now `~/Claude code/rep-counter 2/`).
+The history below is reconstructed from that sibling repo, which held
+byte-identical app code as of 19 Aug 2026.
 
 There are **three commits**, all authored by `siddharth <siddharth.j2128@gmail.com>`:
 
@@ -908,10 +916,52 @@ There are **three commits**, all authored by `siddharth <siddharth.j2128@gmail.c
   treated as primary source, not as a summary of something recoverable.
 - Branch `main`, remote `origin` →
   `https://github.com/siddhaaaaaaaaaaarth/rep-counter-2.git`.
-- **`git push` has never succeeded.** The site was deployed by GitHub's web
-  drag-and-drop uploader, so GitHub has its own unrelated commit history. A
-  plain push is rejected as a non-fast-forward. Do not `--force` without asking.
-  Full detail in `06-PROJECT-CONTEXT.md` §2.
+- **`git push` never succeeded from that repo.** The site was deployed by
+  GitHub's web drag-and-drop uploader, so GitHub had its own unrelated commit
+  history and a plain push was rejected as a non-fast-forward. Auth was never
+  completed either — no key, no token. Full detail in
+  `06-PROJECT-CONTEXT.md` §2. **That repo is now abandoned; none of this
+  applies to current work.**
+
+### 8.1 The current repository ⚠ this is the live one
+
+Created 8 Oct 2026, deliberately as a **fresh repo with no shared history** —
+the old repo's three commits are snapshots of an older build, and the old repo
+and its live site were left untouched as a separate project.
+
+| | |
+| --- | --- |
+| **Local** | `~/Claude code/rep-counter 2/` (moved out of `Documents/` Oct 2026) |
+| **Remote** | `git@github.com:siddhaaaaaaaaaaarth/rep-counter.git` — **SSH, not HTTPS** |
+| **Live site** | <https://siddhaaaaaaaaaaarth.github.io/rep-counter/> |
+| **Pages source** | branch `main`, folder `/ (root)` |
+| **First commit** | `1511484` — 30 files, 9,162 insertions, the complete state at `repcounter-v9` |
+
+**Deploying is now `git push`.** Pages rebuilds from `main` within a minute or
+two. No more drag-and-drop.
+
+- **Auth is an ed25519 SSH key** at `~/.ssh/id_ed25519`, registered on the
+  GitHub account. No passphrase — it is protected by the macOS account instead.
+  `ssh -T git@github.com` confirms it.
+- **Git identity is set LOCALLY in this repo only** (`siddharth
+  <siddharth.j2128@gmail.com>`), not machine-wide. A clone elsewhere will not
+  inherit it.
+- **`.gitignore` excludes `.DS_Store`** — it was committed to the old repo by
+  accident and caused permanent noise in `git status`.
+- ⚠ **`CACHE_VERSION` still has to be bumped by hand** in the same change.
+  Pushing does not do it for you, and without it every installed phone keeps
+  serving the old build indefinitely. This is now the single easiest way to
+  deploy something that appears to do nothing.
+- ⚠ **A deployed change needs TWO app launches to appear on a phone.** The
+  service worker is cache-first: the first launch after a deploy serves the
+  cached build and fetches the new one in the background; the second shows it.
+  That is not a failed deploy.
+
+**The old project, for reference and left alone:** repo
+`siddhaaaaaaaaaaarth/rep-counter-2`, still live at
+<https://siddhaaaaaaaaaaarth.github.io/rep-counter-2/> serving `repcounter-v2`,
+with its local folder at `~/Documents/Claude code/rep-counter/`. Different
+origin, so its `localStorage` data is **not** visible to the new site.
 
 ---
 
