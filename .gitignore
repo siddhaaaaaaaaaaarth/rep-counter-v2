@@ -1,0 +1,19 @@
+# macOS Finder metadata. Not part of the app, changes constantly, and was
+# accidentally committed to the previous repo — keep it out of this one.
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor / IDE scratch
+.vscode/
+.idea/
+*.swp
+
+# Claude Code session state. Local tooling config, not app source.
+.claude/
+
+# Nothing else belongs here: this project has NO build step, NO package
+# manager and NO dependencies. If you ever find yourself adding node_modules
+# or a dist/ folder to this file, something has gone wrong with the premise
+# of the app — see CLAUDE.md.

@@ -1,0 +1,1167 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+ * app.css — all layout and component styling. The only stylesheet with rules
+ * that target elements; theme.css holds tokens, fonts.css holds @font-face.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠ NO COLOUR LITERALS BELOW THIS HEADER. Every colour is a var() from
+ *   theme.css. One hard-coded hex here breaks one of the four themes, silently
+ *   and usually only in the theme you weren't looking at. The single exception
+ *   is the `var(--bg, #0a0a0a)` boot fallback on html/body, which paints before
+ *   applyTheme() has set data-theme.
+ *
+ * THE LAYOUT CONTRACT (screens.js emits exactly this shape; rules here assume it)
+ *   .screen   flex column, fills #app
+ *     .hd     fixed header, never scrolls
+ *     .scroll THE ONLY scrolling region (flex:1). body is overflow:hidden, so
+ *             content placed outside .scroll is unreachable, not just awkward.
+ *     .cta    fixed bottom button row (optional)
+ *
+ * CLASS NAMING — flat, no BEM, no nesting. Short prefixes group a component:
+ *   .hd-* header   .card/.lr-*/.log-* rows   .tb-* timer bar   .cg-* e1RM chart
+ *   .x*    spreadsheet grid   .p* progress table   .rate-* rating tiles
+ * State is a separate `is-` class toggled by screens.js or app.js:
+ *   .is-on (active/enabled)  .is-lead (next up)  .is-done  .is-todo  .is-now
+ *   .is-sel (selected)  .is-drop (drop segment)  .is-expanded  .is-idle
+ *
+ * BROWSER-SUPPORT PAIRS — do not "tidy" these into one declaration:
+ *   height: 100vh; height: 100dvh;        (dvh: Chrome 108+/Safari 15.4+)
+ *   max-height: 92vh; max-height: 92dvh;
+ *   width/height: min(240px,66vw); aspect-ratio: 1;   (Safari < 15)
+ * The first line of each pair is the fallback; older browsers ignore the
+ * second. This works for normal properties — it does NOT work for custom
+ * properties, which is why theme.css needs @supports instead.
+ *
+ * TWO NON-NEGOTIABLES
+ *   - Inputs and textareas stay ≥16px or iOS Safari zooms the page on focus.
+ *     (.pad is 16px, .field input is 22px. A stepper placed OUTSIDE a .field
+ *     inherits neither — see the known-issues list in docs/07.)
+ *   - -webkit-font-smoothing: antialiased on body. Without it macOS/iOS
+ *     subpixel-antialiases the same fonts noticeably heavier.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Base ─────────────────────────────────────────────────── */
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg, #0a0a0a);
+  /* iOS inflates text in landscape without this */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-ui);
+  color: var(--text);
+  overflow: hidden;
+  /* The design renders every screen inside a frame that sets
+   * -webkit-font-smoothing: antialiased. Without it macOS/iOS use subpixel
+   * antialiasing, which thickens the same Bebas Neue / Archivo noticeably —
+   * that was the "slightly different font". */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button, textarea, input {
+  font-family: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  margin: 0;
+}
+
+button {
+  cursor: pointer;
+  touch-action: manipulation;   /* kills the 300ms double-tap-zoom delay */
+  /* rapid tapping the counter otherwise starts a text selection / callout on iOS */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+#app {
+  height: 100vh;   /* fallback for Chrome < 108 / Safari < 15.4 */
+  height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.screen {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: max(18px, env(safe-area-inset-top)) 16px 0;
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 14px;
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar { width: 0; height: 0; }
+
+/* ── Type ─────────────────────────────────────────────────── */
+.title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 34px;
+  letter-spacing: 0.03em;
+  line-height: 0.9;
+}
+.title.md { font-size: 28px; }
+.title.sm { font-size: 21px; }
+
+.sub {
+  display: block;
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+  text-transform: uppercase;
+  /* the design sets no tracking on this one — 700 11px Archivo, plain */
+}
+
+.hint {
+  margin: 4px 0 0;
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.sub.on-accent { color: var(--accent); }
+
+.dsp { font-family: var(--font-display); font-weight: 900; }
+.accent { color: var(--accent); }
+
+/* ── Header ───────────────────────────────────────────────── */
+.hd {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  flex: none;
+}
+.hd-mid { flex: 1; min-width: 0; }
+
+.icon-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 22px;
+  border-radius: 2px;
+}
+.icon-btn:active { background: var(--surface); }
+.icon-btn svg { display: block; }
+
+.txt-btn {
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 6px 8px;
+}
+.txt-btn.is-on { color: var(--accent); }
+
+/* ── Cards / rows ─────────────────────────────────────────── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: var(--bw) solid var(--bc);
+  padding: 15px 16px;
+  color: var(--text);
+}
+.card:active { background: var(--surface-2); }
+.card.is-empty { opacity: 0.55; }
+.card.is-lead { border-left: max(var(--lead-w), var(--bw)) solid var(--accent); }
+.card .arrow {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--text);
+}
+.card.is-lead .arrow { color: var(--accent); }
+.card .arrow.is-accent { color: var(--accent); }
+
+.card-body {
+  flex: 1;
+  min-width: 0;
+  display: block;
+}
+
+.card-name {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: 0.02em;
+}
+.card-name.sm { font-size: 17px; }
+
+/* per-exercise switches, right on the card */
+.mini-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.mini {
+  display: inline-block;
+  padding: 5px 7px;
+  font-weight: 800;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: var(--field-bw) solid var(--hairline);
+}
+.mini.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+.card-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.status {
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  text-align: right;
+}
+.status.is-idle { color: var(--muted); }
+
+.del-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-family: var(--font-display);
+  font-size: 17px;
+  line-height: 1;
+}
+
+/* Reorder arrows in EDIT mode. Same footprint as .del-btn so the row's
+ * controls line up, but surface-coloured rather than accent — moving an
+ * exercise is reversible, deleting one isn't, and only the destructive
+ * control gets the loud colour. */
+.ord-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 15px;
+  line-height: 1;
+}
+/* Dimmed at the ends of the list. Kept in the layout rather than hidden so
+ * the controls don't shift position as you move an item up and down. */
+.ord-btn.is-off { opacity: 0.25; }
+
+.empty {
+  padding: 34px 8px;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 17px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: 0.05em;
+  border: var(--bw) solid var(--bc);
+}
+.btn-accent { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn-invert { background: var(--invert-bg); color: var(--invert-fg); border-color: var(--invert-bg); }
+.btn-quiet { background: var(--surface); color: var(--text); }
+/* Outlined accent. Used for END WORKOUT: it needs to sit in the same slot as
+ * the solid-red START WORKOUT but must NOT look like a second "go" button —
+ * ending a session freezes it into the log and wipes the workout. Hollow reads
+ * as "this concludes something" rather than "this adds something".
+ * Border width is fixed at 2px rather than var(--bw), because on the dark
+ * themes --bw is 0 and the outline is the entire point of this button. */
+.btn-outline {
+  background: transparent;
+  color: var(--accent);
+  border: 2px solid var(--accent);
+}
+.btn:active { opacity: 0.82; }
+.btn[disabled] { opacity: 0.45; cursor: default; }
+
+.cta {
+  flex: none;
+  padding: 10px 0 max(14px, env(safe-area-inset-bottom));
+  background: var(--bg);
+}
+
+.btn-row { display: flex; gap: 10px; }
+.btn-row > * { flex: 1; }
+
+/* ── Settings rows + compact theme picker ─────────────────── */
+.opt-list { display: flex; flex-direction: column; gap: 8px; }
+
+.opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 13px 14px;
+  background: var(--surface);
+  border: var(--bw) solid var(--bc);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.03em;
+}
+.opt { margin-bottom: 10px; }
+.opt:last-of-type { margin-bottom: 0; }
+.opt:active { background: var(--surface-2); }
+.opt.is-on { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+/* destructive rows carry the accent so they don't read as a neutral setting
+ * (the mono themes have no red by design, so they stay monochrome) */
+.opt.is-danger, .opt.is-danger .opt-val { color: var(--accent); }
+.opt-val {
+  flex: none;
+  font-weight: 800;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.opt.is-on .opt-val { color: var(--accent-fg); }
+
+.theme-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  background: var(--surface);
+  border: var(--bw) solid var(--bc);
+  color: var(--text);
+}
+.theme-row.is-sel { border-left: max(var(--lead-w), var(--bw)) solid var(--accent); }
+.theme-row .sw {
+  flex: none;
+  display: flex;
+  width: 54px;
+  height: 26px;
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+}
+.theme-row .sw i { display: block; }
+.theme-name {
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0.03em;
+}
+.theme-check {
+  flex: none;
+  width: 16px;
+  font-size: 14px;
+  color: var(--accent);
+}
+
+/* ── Timer bar (exercise screen) ──────────────────────────── */
+.timerbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 9px 10px;
+  background: var(--surface);
+  border: var(--bw) solid var(--bc);
+}
+.timerbar.is-done { background: var(--accent); border-color: var(--accent); }
+.timerbar.is-done .tb-time,
+.timerbar.is-done .tb-label { color: var(--accent-fg); }
+
+.tb-time {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  min-width: 66px;
+}
+.tb-label {
+  font-weight: 800;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-transform: uppercase;
+  flex: 1;
+  line-height: 1.25;
+}
+
+.chip {
+  flex: none;
+  padding: 7px 9px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  border: var(--field-bw) solid var(--bc);
+}
+.chip.is-on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.chip.lg { padding: 13px 10px; font-size: 15px; }
+
+.chip-row {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.chip-row .chip { flex: 1; text-align: center; padding: 11px 8px; }
+
+/* ── Counter ──────────────────────────────────────────────── */
+.counter-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 22px 0 8px;
+}
+
+.counter {
+  width: min(200px, 54vw);
+  height: min(200px, 54vw);
+  background: var(--accent);
+  color: var(--accent-fg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-2deg);
+  box-shadow: var(--tap-shadow);
+  transition: transform 0.08s ease;
+  user-select: none;
+}
+.counter.is-tapped { transform: rotate(-2deg) scale(0.96); }
+.counter .reps {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: min(100px, 27vw);
+  line-height: 0.85;
+}
+.counter .cap {
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.fine {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+.fine button {
+  padding: 9px 16px;
+  background: var(--surface);
+  border: var(--bw) solid var(--bc);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+}
+
+/* ── Workout rating, 1–10 ─────────────────────────────────── */
+.rate-strip {
+  display: flex;
+  gap: 0;                 /* butted together so the ramp reads continuous */
+  padding: 4px 0;
+}
+.rate {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 15px 0;
+  line-height: 1;
+  transition: transform 0.1s ease;
+}
+.rate-num {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 17px;
+  letter-spacing: 0.02em;
+}
+.rate.is-sel {
+  transform: scale(1.14);
+  outline: 3px solid var(--text);
+  outline-offset: -3px;
+  box-shadow: 0 0 0 3px var(--bg);
+  position: relative;
+  z-index: 2;
+}
+.rate-label {
+  margin-top: 10px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+/* ── Weight strip — the number that changes every session ── */
+.wstrip { display: flex; gap: 8px; align-items: stretch; }
+
+.wstep {
+  flex: none;
+  width: 76px;
+  background: var(--surface);
+  border: var(--bw) solid var(--bc);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 19px;
+  letter-spacing: 0.03em;
+}
+.wstep:active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+
+.wval {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 6px;
+  text-align: center;
+  background: var(--surface);
+  border: var(--bw) solid var(--bc);
+  color: var(--text);
+}
+.wval b {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 34px;
+  line-height: 1;
+}
+.wval span {
+  display: block;
+  margin-top: 3px;
+  font-weight: 800;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.wnote {
+  margin-top: 8px;
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ── Section headers ──────────────────────────────────────── */
+.sec {
+  margin-top: 22px;
+}
+.sec-hd {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.sec-hd h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+}
+.sec-note {
+  font-weight: 800;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sec-note.is-ok { color: var(--accent); }
+
+/* ── Set log rows (slide 4, merged into the counter screen) ─ */
+.log-row {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: var(--bw) solid var(--bc);
+  padding: 12px 14px;
+  color: var(--text);
+}
+.log-row + .log-row { margin-top: 8px; }
+
+.lr-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
+/* done — grayed back and quiet; tap it (✎) to correct the numbers */
+.log-row.is-done { opacity: 0.5; }
+.log-row.is-done:active { opacity: 0.8; }
+.log-row.is-done .log-set { color: var(--muted); }
+
+/* the set being worked on — the loudest row on the screen */
+.log-row.is-now {
+  background: var(--surface-2);
+  border: var(--dash-w) solid var(--accent);
+}
+.log-row.is-now .log-set { color: var(--accent); }
+
+/* still to come — full-strength ink rather than gray */
+.log-row.is-todo {
+  background: none;
+  border: var(--dash-w) dashed var(--text);
+}
+.log-row.is-todo .log-set,
+.log-row.is-todo .log-val b { color: var(--text); }
+
+.log-set {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--text);
+  letter-spacing: 0.03em;
+}
+.log-vals { display: flex; gap: 16px; align-items: center; }
+.log-val { display: block; text-align: right; }
+.log-val b {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 20px;
+  line-height: 1;
+}
+.log-val span {
+  display: block;
+  font-weight: 800;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.log-edit {
+  flex: none;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* drop-set segments belonging to one set */
+.lr-segs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 7px;
+  border-top: 1px solid var(--hairline);
+}
+.lr-seg {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.log-row.is-now .lr-seg { color: var(--text); }
+
+/* ── Remarks notepad (per exercise) ───────────────────────── */
+.pad {
+  width: 100%;
+  min-height: 104px;
+  resize: vertical;
+  padding: 13px;
+  background: var(--field-bg);
+  border: var(--field-bw) solid var(--bc);
+  color: var(--text);
+  /* 16px minimum — anything smaller makes iOS Safari zoom in on focus */
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+.pad::placeholder { color: var(--muted); }
+.pad:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* ── Full timer screen ────────────────────────────────────── */
+.tabs { display: flex; gap: 10px; margin-top: 18px; }
+.tabs .chip { flex: 1; text-align: center; padding: 11px; font-size: 14px; }
+
+.dial {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+.dial-inner {
+  position: relative;
+  width: min(240px, 66vw);
+  height: min(240px, 66vw);   /* fallback for Safari < 15 */
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+.dial-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: var(--ring);
+}
+.dial svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.dial svg circle { fill: none; stroke: var(--accent); stroke-width: 4; transition: stroke-dashoffset 0.15s linear; }
+.dial-time {
+  position: relative;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 52px;
+  letter-spacing: 0.02em;
+}
+.dial-sub {
+  position: absolute;
+  bottom: 22%;
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.presets { display: flex; gap: 8px; margin-bottom: 10px; }
+.presets .chip { flex: 1; text-align: center; }
+
+/* ── The big rest ON/OFF switch on the timer screen ──────── */
+.rest-panel {
+  flex: none;
+  background: var(--surface);
+  border: var(--bw) solid var(--bc);
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.rest-panel-hd {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+.rest-panel-hd span {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+.rest-switch {
+  display: flex;
+  border: var(--field-bw) solid var(--bc);
+}
+.rest-switch-half {
+  flex: 1;
+  padding: 16px 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  background: var(--field-bg);
+}
+.rest-switch-half.is-sel { color: var(--text); }
+.rest-switch-half.is-on.is-sel { background: var(--accent); color: var(--accent-fg); }
+
+/* ── Bottom tab bar (home / data log) ─────────────────────── */
+.tabbar {
+  flex: none;
+  display: flex;
+  gap: 0;
+  margin-top: 14px;
+  padding: 10px 0 max(10px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--muted);
+  background: var(--bg);
+}
+.tab {
+  flex: 1;
+  padding: 6px 0;
+  text-align: center;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+.tab.is-on { color: var(--accent); }
+
+/* ── Data log: exercise nav + progress table ──────────────── */
+.ex-nav {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+}
+.ex-arrow {
+  flex: none;
+  width: 44px;
+  padding: 8px 0;
+  background: var(--surface);
+  border: var(--bw) solid var(--bc);
+  color: var(--accent);
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1;
+}
+.ex-arrow[disabled] { opacity: 0.3; }
+.ex-nav-name {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.ex-nav-name span {
+  display: block;
+  margin-top: 2px;
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.ptable {
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--surface);
+  border: var(--bw) solid var(--bc);
+  color: var(--text);
+}
+.ptable-name {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  margin-bottom: 8px;
+}
+.ptable-unit {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+/* ── e1RM chart ───────────────────────────────────────────── */
+.cg-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.cg-rbtn {
+  padding: 6px 10px;
+  background: var(--surface-2);
+  border: 0;
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+.cg-rbtn.is-on { background: var(--accent); color: var(--accent-fg); }
+.cg-rcount {
+  margin-left: auto;
+  font-weight: 800;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.cg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+.cg-grid {
+  stroke: var(--hairline);
+  stroke-width: 1;
+}
+.cg-axis {
+  stroke: var(--muted);
+  stroke-width: 1;
+}
+.cg-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.cg-dot {
+  fill: var(--accent);
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+.cg-ylab, .cg-xlab {
+  fill: var(--muted);
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: 8px;
+  letter-spacing: 0.03em;
+}
+.cg-val {
+  fill: var(--text);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 11px;
+}
+.ptable-body { margin-top: 4px; }
+.ptable-body.is-expanded { max-height: 360px; overflow-y: auto; }
+.ptable-hint {
+  margin-top: 8px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+/* ── Session notes (data log) ──
+ * One entry per session that carried a written note. Body text is deliberately
+ * NOT uppercased or condensed like the rest of the app's display type — these
+ * are the user's own sentences and need to read as prose, not signage. */
+.note-row {
+  padding: 10px 0;
+  border-top: 1px solid var(--hairline);
+}
+.note-row:first-of-type { border-top: 0; }
+.note-hd {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+.note-hd span { color: var(--muted); }
+.note-body {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--text);
+  white-space: pre-wrap;   /* keep the user's own line breaks */
+}
+
+.prow {
+  display: grid;
+  grid-template-columns: 1.3fr 0.8fr 0.9fr 0.7fr;
+  gap: 4px 6px;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.prow.phead {
+  font-weight: 800;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  padding-bottom: 6px;
+  border-bottom-width: 2px;
+}
+.prow.is-drop { opacity: 0.65; }
+.prow-date { color: var(--text); }
+.prow-set { color: var(--muted); }
+.prow-reps { font-weight: 900; color: var(--accent); }
+.prow-empty {
+  padding: 18px 0;
+  text-align: center;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+/* ── Data log: spreadsheet view ───────────────────────────── */
+.sheet-screen { padding-left: 12px; padding-right: 12px; }
+.xwrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  margin: 12px 0 max(14px, env(safe-area-inset-bottom));
+  border: 1px solid var(--hairline);
+}
+.xgrid {
+  display: grid;
+  grid-template-columns: 0.85fr 1.5fr 0.6fr 0.8fr 0.55fr 0.7fr 0.7fr;
+  min-width: 530px;
+}
+.xc {
+  padding: 7px 6px;
+  font-weight: 700;
+  font-size: 10px;
+  border-right: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.xc:nth-child(7n) { border-right: 0; }
+.xh {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-2);
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+.xc-reps { font-weight: 900; color: var(--accent); }
+
+/* ── Sheets ───────────────────────────────────────────────── */
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+  animation: fade 0.14s ease;
+}
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { transform: translateY(14px); } }
+
+.sheet {
+  width: 100%;
+  max-width: 480px;
+  background: var(--bg);
+  border-top: var(--bw) solid var(--bc);
+  padding: 18px 16px max(16px, env(safe-area-inset-bottom));
+  animation: rise 0.16s ease;
+  max-height: 92vh;
+  max-height: 92dvh;
+  overflow-y: auto;
+}
+.sheet h2 {
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: 0.03em;
+}
+.sheet p.hint {
+  margin: -8px 0 14px;
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.field { margin-bottom: 14px; }
+.field label {
+  display: block;
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.field input {
+  width: 100%;
+  padding: 13px;
+  background: var(--field-bg);
+  border: var(--field-bw) solid var(--bc);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: 0.02em;
+}
+.field input:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+.field.row3 { display: flex; gap: 10px; }
+.field.row3 > div { flex: 1; }
+
+.stepper { display: flex; align-items: stretch; gap: 8px; }
+.stepper input { flex: 1; text-align: center; }
+.stepper button {
+  width: 54px;
+  background: var(--surface);
+  border: var(--bw) solid var(--bc);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 24px;
+}
